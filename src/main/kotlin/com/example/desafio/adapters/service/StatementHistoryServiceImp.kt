@@ -1,7 +1,7 @@
 package com.example.desafio.adapters.service
 
 import com.example.desafio.adapters.jpa_database.repository.StatementOutputRepository
-import com.example.desafio.application.ports.StatementHistoryService
+import com.example.desafio.application.ports.`in`.StatementHistoryService
 import com.example.desafio.domain.transaction.StatementHistory
 import com.example.desafio.domain.transaction.WithdrawProcess
 import org.springframework.stereotype.Service

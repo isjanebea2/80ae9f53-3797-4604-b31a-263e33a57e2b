@@ -16,9 +16,9 @@ class TransactionController(
     @ResponseStatus(HttpStatus.OK)
     fun authorizeTransaction(@RequestBody request: TransactionRequest): TransactionResponse {
 
-        val status = cardWithdrawUseCase.execute(request)
+        val withdrawResult = cardWithdrawUseCase.execute(request.toDomain())
 
-        return TransactionResponse(status.code)
+        return TransactionResponse(withdrawResult.status.externalCodes)
     }
 
 }

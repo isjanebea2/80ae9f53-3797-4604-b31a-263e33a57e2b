@@ -1,12 +1,14 @@
 package com.example.desafio.application
 
-import com.example.desafio.adapters.rest.dto.TransactionRequest
-import com.example.desafio.application.ports.AccountService
-import com.example.desafio.application.ports.StatementHistoryService
+import com.example.desafio.application.ports.`in`.AccountService
+import com.example.desafio.application.ports.`in`.StatementHistoryService
+import com.example.desafio.application.ports.out.WithdrawResult
+import com.example.desafio.domain.account.Account
+import com.example.desafio.domain.account.AccountAmount
 import com.example.desafio.domain.transaction.Withdraw
-import com.example.desafio.domain.transaction.enums.Mcc
+import com.example.desafio.domain.transaction.enums.MerchantCategory
 import com.example.desafio.domain.transaction.WithdrawProcess
-import com.example.desafio.domain.transaction.enums.TransactionCode
+import com.example.desafio.domain.transaction.enums.TransactionCodesEnum
 import org.apache.juli.logging.Log
 import org.apache.juli.logging.LogFactory
 import org.springframework.stereotype.Service
@@ -19,75 +21,129 @@ class CardWithdrawUseCase(
 ) {
     val logger: Log = LogFactory.getLog(CardWithdrawUseCase::class.java)
 
-    fun execute(request: TransactionRequest): TransactionCode {
+    fun execute(withdrawProcess: WithdrawProcess): WithdrawResult {
 
-        val currentMccProcess = Mcc.fromString(request.mcc)
+        val accountId = withdrawProcess.accountId
+        logger.info("Executing transaction process for account $accountId and request  and operation = ${withdrawProcess.merchantCategory}")
 
-        logger.info("Executing transaction process for account ${request.accountId} and request (TODO REQUEST ID) and operation = $currentMccProcess")
-
-        val account = accountService.findAccountById(request.accountId.toLong())
-
-        val withdrawProcessed = WithdrawProcess(
-            account,
-            request.totalAmount.toBigDecimal(),
-            currentMccProcess,
-            request.merchant
+        val account = accountService.findAccountById(accountId.toLong()) ?: return this.processUnavailableTransaction(
+            withdrawProcess,
+            TransactionCodesEnum.UNAVAILABLE_MAIN_ACCOUNT
         )
 
-        val withdrawResult = processWithdraw(withdrawProcessed, currentMccProcess)
-
-        if (withdrawResult.isError()) {
-            logger.error("Error to process transaction with mcc $currentMccProcess status ${withdrawResult.status}")
-            return withdrawResult.status
+        if (account.isAvailableAccountsAmount()) {
+            return this.processUnavailableTransaction(
+                withdrawProcess,
+                TransactionCodesEnum.UNAVAILABLE_EMPTY_ACCOUNTS_AMOUNT
+            )
         }
 
-        if (!withdrawResult.isRejected()) {
-            return saveWithdraw(withdrawResult, withdrawProcessed)
+        val targetAccountAmount = account.findAccountAmountByMcc(withdrawProcess.merchantCategory)
+            ?: return this.processUnavailableTransaction(withdrawProcess, TransactionCodesEnum.UNAVAILABLE_MAIN_ACCOUNT)
+
+        val withdraw = this.processWithdraw(withdrawProcess, targetAccountAmount)
+
+        if (withdraw.status.isError()) {
+            return this.processUnavailableTransaction(
+                withdrawProcess,
+                TransactionCodesEnum.UNAVAILABLE_MAIN_ACCOUNT
+            )
         }
 
-        fun processFallback(mcc: Mcc): TransactionCode? {
-            val fallbackResult = processWithdraw(withdrawProcessed, mcc)
-            logger.info("Transaction process fallback with mcc $mcc status ${withdrawResult.status}")
-            return if (!fallbackResult.isRejected()) {
-                saveWithdraw(fallbackResult, withdrawProcessed.copy(mcc = fallbackResult.mcc))
-            } else null
+        if (!withdraw.status.isRejected()) {
+            return saveWithdraw(withdraw, withdrawProcess)
         }
 
-        processFallback(Mcc.MEAL)?.let { return it }
+        processFallback(
+            withdrawProcess.copy(merchantCategory = MerchantCategory.MEAL),
+            account
+        )?.let { return it }
 
-        processFallback(Mcc.CASH)?.let { return it }
+        processFallback(
+            withdrawProcess.copy(merchantCategory = MerchantCategory.CASH),
+            account
+        )?.let { return it }
 
-        return withdrawResult.status
+        return this.processUnavailableTransaction(withdrawProcess, TransactionCodesEnum.REJECT)
     }
 
+    private fun processFallback(withdrawProcess: WithdrawProcess, account: Account): WithdrawResult? {
 
-    private fun processWithdraw(withdrawProcess: WithdrawProcess, mcc: Mcc): Withdraw {
+        val targetAccountAmountFallback = account.findAccountAmountByMcc(withdrawProcess.merchantCategory)
 
-        val result = withdrawProcess.copy(mcc = mcc).toResult()
+        targetAccountAmountFallback?.let {
+            val fallbackWithdraw = processWithdraw(
+                withdrawProcess,
+                accountAmount = it
+            )
+            val fallbackStatus = fallbackWithdraw.status
 
-        if (result.status.isRejected()) {
-            if (result.status.isError()) {
-                this.logger.error("Error to process transaction with status ${result.status}")
+            withdrawProcess.changeStatus(fallbackStatus)
+
+            logger.info("Transaction process fallback with mcc ${withdrawProcess.merchantCategory} status $fallbackStatus")
+
+            if (fallbackStatus.isApproved()) {
+                return saveWithdraw(fallbackWithdraw, withdrawProcess)
             }
         }
 
-        return result
+        return null
+    }
+
+    private fun processWithdraw(withdrawProcess: WithdrawProcess, accountAmount: AccountAmount): Withdraw {
+        val withdrawStatus = if (accountAmount.authorizeWithdraw(withdrawProcess.totalWithdrawalAmount)) {
+            TransactionCodesEnum.APPROVED
+        } else {
+            TransactionCodesEnum.REJECT
+        }
+
+        return Withdraw(
+            totalAmount = withdrawProcess.totalWithdrawalAmount,
+            merchantCategory = withdrawProcess.merchantCategory,
+            accountAmount = accountAmount,
+            status = withdrawStatus,
+        )
     }
 
     private fun saveWithdraw(
         withdraw: Withdraw,
         withdrawProcess: WithdrawProcess
-    ): TransactionCode {
-        logger.info("Attempted to execute transaction process accountAmount ${withdraw.accountAmountTargetId}")
+    ): WithdrawResult {
+        val targetAccountAmountId = withdraw.accountAmount.id
+        logger.info("Attempted to execute transaction process accountAmount $targetAccountAmountId")
 
-        val status = accountService.withdraw(withdraw.accountAmountTargetId, withdrawProcess)
+        try {
+            val status = accountService.withdraw(targetAccountAmountId, withdrawProcess)
 
-        if (!status) return TransactionCode.REJECT
+            if (!status) {
+                this.processUnavailableTransaction(withdrawProcess, TransactionCodesEnum.REJECT)
+            }
 
-        logger.info("Successfully executed transaction process for account ${withdraw.accountAmountTargetId} with totalAmount ${withdraw.totalAmount} ")
+            logger.info("Successfully executed transaction process for account $targetAccountAmountId with totalAmount ${withdraw.totalAmount} ")
 
-        statementHistoryService.withdrawSave(withdraw.accountAmountTargetId, withdrawProcess)
+            statementHistoryService.withdrawSave(targetAccountAmountId, withdrawProcess)
 
-        return withdraw.status
+            withdrawProcess.changeStatus(withdraw.status)
+        } catch (e: Exception) {
+            this.processUnavailableTransaction(withdrawProcess, TransactionCodesEnum.INTERNAL_ERROR)
+            this.logger.error("Occurred un error when persist withdraw of account $targetAccountAmountId", e)
+        }
+
+        return WithdrawResult(withdrawProcess.status)
     }
+
+    private fun processUnavailableTransaction(
+        withdrawProcess: WithdrawProcess,
+        transactionCodesEnum: TransactionCodesEnum
+    ): WithdrawResult {
+        withdrawProcess.changeStatus(transactionCodesEnum)
+
+        if (withdrawProcess.status.isError()) {
+            this.logger.error("Error to process transaction for ${withdrawProcess.accountId} with code $transactionCodesEnum")
+            this.logger.error(withdrawProcess)
+        }
+
+        return WithdrawResult(withdrawProcess.status)
+    }
+
 }

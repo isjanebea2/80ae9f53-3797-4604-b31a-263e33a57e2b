@@ -1,28 +1,24 @@
 package com.example.desafio.domain.account
 
-import jakarta.persistence.*
-import org.hibernate.annotations.ColumnDefault
-import java.time.Instant
+import com.example.desafio.domain.transaction.Withdraw
+import com.example.desafio.domain.transaction.WithdrawProcess
+import com.example.desafio.domain.transaction.enums.MerchantCategory
+import com.example.desafio.domain.transaction.enums.TransactionCodesEnum
 
-@Entity
-@Table(name = "account", schema = "caju")
 data class Account(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    val id: Long,
+    val availableAccountsAmount: HashMap<String, AccountAmount>,
+    val id: Long = 0,
+    val status: String
+) {
+    fun findAccountAmountByMcc(merchantCategory: MerchantCategory): AccountAmount? {
+        return if (availableAccountsAmount.isNotEmpty() && availableAccountsAmount.containsKey(merchantCategory.internalName)) {
+            availableAccountsAmount[merchantCategory.internalName]
+        } else {
+            null
+        }
+    }
 
-    @Column(name = "status", nullable = false, length = 20)
-    val status: String,
-
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
-    val createdAt: Instant,
-
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "updated_at")
-    val updatedAt: Instant,
-
-    @Column(name = "deleted_at")
-    val deletedAt: Instant,
-)
+    fun isAvailableAccountsAmount(): Boolean {
+        return availableAccountsAmount.isEmpty()
+    }
+}

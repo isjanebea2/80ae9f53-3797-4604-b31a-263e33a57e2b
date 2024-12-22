@@ -1,4 +1,4 @@
-package com.example.desafio.domain.account
+package com.example.desafio.adapters.jpa_database.entity
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -9,7 +9,7 @@ import java.time.Instant
 
 @Entity
 @Table(name = "account_type", schema = "caju")
-data class AccountType(
+data class AccountTypeEntity(
     @Id
     @Column(name = "id", nullable = false)
     var id: Int,
