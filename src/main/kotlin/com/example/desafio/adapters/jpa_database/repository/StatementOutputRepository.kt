@@ -18,13 +18,12 @@ interface StatementOutputRepository : JpaRepository<StatementHistory, String> {
             INSERT INTO statement_output(
                 id, value, merchant, account_amount_id, transaction_logs_id, created_at, updated_at
             ) VALUES (
-                :id, :value, :merchant, :accountAmountId, :transactionLogId, :createdAt, :updatedAt
+                uuid(), :value, :merchant, :accountAmountId, :transactionLogId, :createdAt, :updatedAt
             )
         """,
         nativeQuery = true
     )
     fun customInsert(
-        id: String,
         value: BigDecimal,
         merchant: String,
         accountAmountId: Long,

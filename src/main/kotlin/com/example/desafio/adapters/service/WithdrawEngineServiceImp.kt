@@ -45,7 +45,7 @@ class WithdrawEngineServiceImp: WithdrawEngineService {
 
         val accountAmount: AccountAmount = account.findAccountAmountByMcc(targetCategory) ?: return null
 
-        if (accountAmount.value === BigDecimal.ZERO) return null
+        if (accountAmount.value <= BigDecimal.ZERO) return null
 
         lastWithdraw?.let {
             if (!it.hasPendingAmount()) return null

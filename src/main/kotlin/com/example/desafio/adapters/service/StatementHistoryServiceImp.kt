@@ -5,6 +5,7 @@ import com.example.desafio.application.ports.`in`.StatementHistoryService
 import com.example.desafio.adapters.jpa_database.entity.StatementHistory
 import com.example.desafio.domain.transaction.Transaction
 import com.example.desafio.domain.transaction.Withdraw
+import com.fasterxml.uuid.Generators
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.*
@@ -15,7 +16,6 @@ class StatementHistoryServiceImp(
 ) : StatementHistoryService {
     override fun withdrawSave(accountAmountId: Long, transaction: Transaction) {
         this.statementOutputRepository.customInsert(
-           id = UUID.randomUUID().toString(),
             value = transaction.totalWithdrawalAmount,
             merchant = transaction.merchant,
             accountAmountId = accountAmountId,
@@ -26,19 +26,20 @@ class StatementHistoryServiceImp(
     }
 
     override fun withdrawSave(transaction: Transaction, withdrawList: List<Withdraw>) {
-        val pendingList: List<StatementHistory> = withdrawList.map {
-            StatementHistory(
-                merchant = transaction.merchant,
-                value = it.totalAmount,
-                accountAmountId = it.accountAmount.id,
-                transactionLogId = transaction.id.toString(),
-            )
-        }
 
-        pendingList.forEach {
+        val transactionLogId = transaction.id.toString()
+
+        withdrawList.forEach {
             this.statementOutputRepository.customInsert(
-                UUID.randomUUID().toString(), it.value, it.merchant, it.accountAmountId, it.transactionLogId, Instant.now(), Instant.now()
+                value = it.totalAmount,
+                merchant = transaction.merchant,
+                accountAmountId = it.accountAmount.id,
+                transactionLogId = transactionLogId,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
             )
         }
     }
+
+    private fun generateId() = Generators.timeBasedGenerator().generate().toString()
 }
