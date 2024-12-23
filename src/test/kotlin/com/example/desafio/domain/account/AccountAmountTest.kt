@@ -81,15 +81,15 @@ class AccountAmountTest {
  }
 
  @Test
- fun `should returns 10,00 when balance is 10,00 and requestAmount 50,00`() {
+ fun `should returns -40,00 when balance is 10,00 and requestAmount 50,00`() {
   val totalAmount = 50.toBigDecimal()
   val accountAmount = AccountAmount(
-   1, (-40).toBigDecimal(), mockk<AccountTypeEntity>(),
+   1, 10.toBigDecimal(), mockk<AccountTypeEntity>(),
   )
 
   val result = accountAmount.toWithdraw(totalAmount)
 
-  assertEquals(10.toBigDecimal(), result)
+  assertEquals((-40).toBigDecimal(), result)
  }
 
 }

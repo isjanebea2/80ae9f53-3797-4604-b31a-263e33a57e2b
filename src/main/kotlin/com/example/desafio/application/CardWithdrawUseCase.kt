@@ -24,6 +24,8 @@ class CardWithdrawUseCase(
     fun execute(transaction: Transaction): WithdrawResult {
 
         val accountId = transaction.accountId
+
+
         logger.info("Executing transaction process for account $accountId and request  and operation = ${transaction.merchantCategory}")
 
         val account = accountService.findAccountById(accountId.toLong()) ?: return this.processUnavailableTransaction(
@@ -137,6 +139,8 @@ class CardWithdrawUseCase(
             val status = accountService.withdraw(withdrawList)
 
             if (status) {
+                statementHistoryService.withdrawSave(transaction, withdrawList)
+
                 return WithdrawResult(TransactionCodesEnum.APPROVED)
             }
         } catch (e: Exception) {

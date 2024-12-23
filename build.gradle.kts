@@ -28,6 +28,9 @@ dependencies {
 	// https://mvnrepository.com/artifact/mysql/mysql-connector-java
 	implementation("mysql:mysql-connector-java:8.0.30")
 
+	// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
+	implementation("com.fasterxml.uuid:java-uuid-generator:5.1.0")
+
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("io.mockk:mockk:1.13.13")

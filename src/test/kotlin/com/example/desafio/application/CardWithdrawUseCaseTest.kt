@@ -26,6 +26,7 @@ class FakeAccountServiceImp : AccountService {
 
 class FakeStatementHistoryServiceImp : StatementHistoryService {
     override fun withdrawSave(accountAmountId: Long, transaction: Transaction) = Unit
+    override fun withdrawSave(transaction: Transaction, withdrawList: List<Withdraw>) = Unit
 }
 
 private val withdrawEngineServiceImp = WithdrawEngineServiceImp()
