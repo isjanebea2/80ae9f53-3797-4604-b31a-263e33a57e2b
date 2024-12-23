@@ -34,6 +34,8 @@ dependencies {
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("io.mockk:mockk:1.13.13")
+	// https://mvnrepository.com/artifact/org.flywaydb/flyway-core
+	// implementation("org.flywaydb:flyway-core:6.4.3")
 
 }
 

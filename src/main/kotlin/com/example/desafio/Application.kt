@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = ["com.example.desafio"])
-class CajuApplication
+class Application
 
 fun main(args: Array<String>) {
-    runApplication<CajuApplication>(*args)
+    runApplication<Application>(*args)
 }

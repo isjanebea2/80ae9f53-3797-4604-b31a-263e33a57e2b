@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: desafio
+  datasource:
+    url: jdbc:mysql://localhost:3306/local_database?createDatabaseIfNotExist=true
+    username: root
+    password: root
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
