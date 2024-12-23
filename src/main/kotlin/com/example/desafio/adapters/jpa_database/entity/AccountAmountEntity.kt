@@ -1,6 +1,7 @@
 package com.example.desafio.adapters.jpa_database.entity
 
 import com.example.desafio.domain.account.AccountAmount
+import com.example.desafio.domain.transaction.Withdraw
 import jakarta.persistence.*
 import org.hibernate.annotations.ColumnDefault
 import java.math.BigDecimal
@@ -42,4 +43,8 @@ data class AccountAmountEntity(
         value = value,
         accountTypeEntity = accountTypeEntity,
     )
+
+    fun  withdraw(totalValue: BigDecimal): AccountAmountEntity {
+        return copy(value =  value - totalValue)
+    }
 }

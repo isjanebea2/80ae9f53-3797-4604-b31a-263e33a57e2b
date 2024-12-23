@@ -1,9 +1,7 @@
 package com.example.desafio.domain.account
 
-import com.example.desafio.domain.transaction.Withdraw
-import com.example.desafio.domain.transaction.WithdrawProcess
 import com.example.desafio.domain.transaction.enums.MerchantCategory
-import com.example.desafio.domain.transaction.enums.TransactionCodesEnum
+import java.math.BigDecimal
 
 data class Account(
     val availableAccountsAmount: HashMap<String, AccountAmount>,
@@ -18,7 +16,15 @@ data class Account(
         }
     }
 
-    fun isAvailableAccountsAmount(): Boolean {
+    fun notAvailableAccountsAmount(): Boolean {
         return availableAccountsAmount.isEmpty()
+    }
+
+    private fun calculateTotalAmount() = availableAccountsAmount.values
+        .map { it.value }
+        .reduce { acc, balance -> acc + balance }
+
+    fun isAvailableBalance(totalAmount: BigDecimal): Boolean {
+        return calculateTotalAmount() >= totalAmount
     }
 }

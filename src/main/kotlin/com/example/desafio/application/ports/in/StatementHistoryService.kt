@@ -1,7 +1,7 @@
 package com.example.desafio.application.ports.`in`
 
-import com.example.desafio.domain.transaction.WithdrawProcess
+import com.example.desafio.domain.transaction.Transaction
 
 interface StatementHistoryService {
-    fun withdrawSave(accountAmountId: Long, transaction: WithdrawProcess)
+    fun withdrawSave(accountAmountId: Long, transaction: Transaction)
 }

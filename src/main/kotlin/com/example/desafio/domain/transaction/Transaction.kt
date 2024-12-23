@@ -4,7 +4,7 @@ import com.example.desafio.domain.transaction.enums.MerchantCategory
 import com.example.desafio.domain.transaction.enums.TransactionCodesEnum
 import java.math.BigDecimal
 
-data class WithdrawProcess(
+data class Transaction(
     val totalWithdrawalAmount: BigDecimal,
     val merchantCategory: MerchantCategory,
     val merchant: String,

@@ -8,6 +8,16 @@ enum class MerchantCategory(val codes: Array<String>, val internalName: String) 
     MEAL(mealMccCodesCommons, "meal"),
     CASH(arrayOf(), "cash");
 
+    fun allowed(mcc: MerchantCategory): Boolean {
+        return when {
+            mcc == this -> true
+            this == FOOD && mcc == MEAL -> true
+            this == FOOD && mcc == CASH -> true
+            this == MEAL && mcc == CASH -> true
+            else -> false
+        }
+    }
+
     companion object {
         fun fromString(name: String): MerchantCategory {
             return when (name) {

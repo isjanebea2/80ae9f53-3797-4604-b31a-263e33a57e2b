@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.DisplayName
 import kotlin.collections.HashMap
 
-class WithdrawProcessTest {
+class TransactionTest {
 
 @Test
 @DisplayName("Test WithdrawProcess")
